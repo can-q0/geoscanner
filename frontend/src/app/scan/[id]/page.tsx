@@ -277,15 +277,48 @@ export default function ScanResultPage({ params }: { params: Promise<{ id: strin
         )}
 
         {summary?.top_findings && summary.top_findings.length > 0 && (
-          <div id="findings" className="rounded-lg bg-gray-900 border border-gray-800 p-6 mb-6 scroll-mt-20">
-            <h2 className="text-lg font-semibold mb-3">Top Findings</h2>
-            <ul className="space-y-2">
-              {summary.top_findings.map((finding, i) => (
-                <li key={i} className="flex items-start gap-3">
-                  <span className="mt-1.5 h-2 w-2 rounded-full bg-amber-500 shrink-0" />
-                  <span className="text-gray-300">{finding}</span>
-                </li>
-              ))}
+          <div id="findings" className="rounded-lg border p-6 mb-6 scroll-mt-20"
+            style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}>
+            <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Top Findings</h2>
+            <ul className="space-y-3">
+              {summary.top_findings.map((finding, i) => {
+                const isBlurred = !scan.isPaid && i >= 3;
+                // Extract severity label (e.g., "CRITICAL:", "HIGH:", "MEDIUM:")
+                const severityMatch = finding.match(/^(CRITICAL|HIGH|MEDIUM|LOW):\s*/i);
+                const severity = severityMatch ? severityMatch[1].toUpperCase() : null;
+                const insightText = severityMatch ? finding.slice(severityMatch[0].length) : finding;
+                const sevColor = severity === "CRITICAL" ? "#ef4444" : severity === "HIGH" ? "#f59e0b" : severity === "MEDIUM" ? "#3b82f6" : "var(--accent)";
+
+                return (
+                  <li key={i} className="flex items-start gap-3">
+                    <span className="mt-1.5 h-2 w-2 rounded-full shrink-0" style={{ background: sevColor }} />
+                    <div className="flex-1">
+                      {severity && (
+                        <span className="inline-block mr-2" style={{
+                          fontFamily: 'var(--font-mono)', fontSize: '0.7rem', fontWeight: 700,
+                          color: sevColor, padding: '1px 6px', borderRadius: '4px',
+                          background: `${sevColor}15`, border: `1px solid ${sevColor}25`,
+                          verticalAlign: 'middle',
+                        }}>
+                          {severity}
+                        </span>
+                      )}
+                      <span style={{
+                        color: isBlurred ? 'transparent' : 'var(--text-secondary)',
+                        textShadow: isBlurred ? '0 0 8px rgba(255,255,255,0.3)' : 'none',
+                        userSelect: isBlurred ? 'none' : 'auto',
+                      }}>
+                        {isBlurred ? insightText.replace(/./g, (c) => c === ' ' ? ' ' : 'x') : insightText}
+                      </span>
+                      {isBlurred && (
+                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: 'var(--accent-secondary)', marginLeft: '8px' }}>
+                          Unlock full report
+                        </span>
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
           </div>
         )}
