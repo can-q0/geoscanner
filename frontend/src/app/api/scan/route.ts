@@ -33,24 +33,13 @@ export async function POST(request: Request) {
       },
     });
 
-    if (false && freeScansUsed >= 1) { // TODO: re-enable limit after testing
-      // Free limit reached - create a scan that requires payment
-      const scan = await prisma.scan.create({
-        data: {
-          userId: user.id,
-          url: normalizedUrl,
-          domain,
-          scanType: "full",
-          status: "pending_payment",
-        },
-      });
-
-      return NextResponse.json({
-        scanId: scan.id,
-        requiresPayment: true,
-        message: "Your free scan has been used. Purchase a full detailed analysis for this website.",
-      });
-    }
+    // TODO: re-enable limit after testing
+    // if (freeScansUsed >= 1) {
+    //   const scan = await prisma.scan.create({
+    //     data: { userId: user.id, url: normalizedUrl, domain, scanType: "full", status: "pending_payment" },
+    //   });
+    //   return NextResponse.json({ scanId: scan.id, requiresPayment: true, message: "Your free scan has been used." });
+    // }
 
     // Free scan available
     const scan = await prisma.scan.create({

@@ -346,11 +346,10 @@ export default function ScanResultPage({ params }: { params: Promise<{ id: strin
         )}
 
         {/* Paid content section */}
+        {/* TODO: re-enable payment wall after testing */}
         {scan.isPaid && scan.resultsFull ? (
           <FullResults results={scan.resultsFull as Record<string, unknown>} scanId={scan.id} pdfUrl={scan.pdfUrl} />
-        ) : (
-          <BlurredSection scanId={scan.id} onUnlock={handleUnlock} />
-        )}
+        ) : null}
       </div>
     </>
   );
