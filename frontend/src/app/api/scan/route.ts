@@ -33,7 +33,7 @@ export async function POST(request: Request) {
       },
     });
 
-    if (freeScansUsed >= 1) {
+    if (false && freeScansUsed >= 1) { // TODO: re-enable limit after testing
       // Free limit reached - create a scan that requires payment
       const scan = await prisma.scan.create({
         data: {
