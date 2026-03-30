@@ -282,7 +282,8 @@ export default function ScanResultPage({ params }: { params: Promise<{ id: strin
             <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Top Findings</h2>
             <ul className="space-y-3">
               {summary.top_findings.map((finding, i) => {
-                const isBlurred = !scan.isPaid && i >= 3;
+                const isCritical = /^CRITICAL/i.test(finding);
+                const isBlurred = !scan.isPaid && isCritical;
                 // Extract severity label (e.g., "CRITICAL:", "HIGH:", "MEDIUM:")
                 const severityMatch = finding.match(/^(CRITICAL|HIGH|MEDIUM|LOW):\s*/i);
                 const severity = severityMatch ? severityMatch[1].toUpperCase() : null;
