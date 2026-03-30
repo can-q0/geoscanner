@@ -1,0 +1,68 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            String    @id @default(uuid()) @db.Uuid
+  clerkId       String    @unique @map("clerk_id") @db.VarChar(255)
+  email         String    @unique @db.VarChar(255)
+  name          String?   @db.VarChar(255)
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz()
+
+  scans    Scan[]
+  payments Payment[]
+
+  @@map("users")
+}
+
+model Scan {
+  id              String    @id @default(uuid()) @db.Uuid
+  userId          String    @map("user_id") @db.Uuid
+  url             String    @db.VarChar(2048)
+  domain          String    @db.VarChar(255)
+  scanType        String    @default("quick") @map("scan_type") @db.VarChar(20)
+  status          String    @default("pending") @db.VarChar(20)
+  progress        Int       @default(0)
+  progressMessage String?   @map("progress_message") @db.VarChar(255)
+  geoScore        Int?      @map("geo_score")
+  scoresSummary   Json?     @map("scores_summary")
+  resultsFull     Json?     @map("results_full")
+  pdfUrl          String?   @map("pdf_url") @db.VarChar(512)
+  isPaid          Boolean   @default(false) @map("is_paid")
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+  completedAt     DateTime? @map("completed_at") @db.Timestamptz()
+  errorMessage    String?   @map("error_message")
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payments Payment[]
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([status])
+  @@map("scans")
+}
+
+model Payment {
+  id              String    @id @default(uuid()) @db.Uuid
+  userId          String    @map("user_id") @db.Uuid
+  scanId          String    @map("scan_id") @db.Uuid
+  amountCents     Int       @map("amount_cents")
+  currency        String    @default("TRY") @db.VarChar(3)
+  status          String    @default("pending") @db.VarChar(20)
+  iyzicoToken     String?   @map("iyzico_token") @db.VarChar(255)
+  iyzicoPaymentId String?   @map("iyzico_payment_id") @db.VarChar(255)
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+  completedAt     DateTime? @map("completed_at") @db.Timestamptz()
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scan Scan @relation(fields: [scanId], references: [id], onDelete: Cascade)
+
+  @@index([scanId])
+  @@index([iyzicoToken])
+  @@map("payments")
+}
