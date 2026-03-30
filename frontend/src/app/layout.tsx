@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Syne, DM_Sans, JetBrains_Mono } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { dark } from "@clerk/themes";
 import "./globals.css";
@@ -6,6 +7,27 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { ToastProvider } from "@/components/Toast";
 import { ThemeProvider } from "@/components/ThemeProvider";
+
+const syne = Syne({
+  subsets: ["latin"],
+  variable: "--font-display-base",
+  display: "swap",
+  weight: ["400", "500", "600", "700", "800"],
+});
+
+const dmSans = DM_Sans({
+  subsets: ["latin"],
+  variable: "--font-body",
+  display: "swap",
+  weight: ["300", "400", "500", "600", "700"],
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-mono",
+  display: "swap",
+  weight: ["400", "500", "600"],
+});
 
 const themeScript = `
 (function(){
@@ -63,9 +85,14 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider appearance={{ baseTheme: dark }}>
-      <html lang="en" className="h-full antialiased" data-theme="dark">
+      <html lang="en" className={`${syne.variable} ${dmSans.variable} ${jetbrainsMono.variable} h-full antialiased`} data-theme="dark">
         <head>
           <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+          {/* Load only digit glyphs from Outfit (~2KB) for clean numbers in display font */}
+          <link
+            href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&text=0123456789.,%25%2B%2D%2F&display=swap"
+            rel="stylesheet"
+          />
         </head>
         <body className="min-h-full flex flex-col">
           <ThemeProvider>

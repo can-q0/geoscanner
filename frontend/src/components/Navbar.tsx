@@ -70,22 +70,36 @@ export default function Navbar() {
   return (
     <nav className="relative z-50" style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-void)' }}>
       <div className="mx-auto max-w-6xl flex items-center justify-between px-6 py-4">
-        <Link href="/" className="flex items-center gap-2.5 group">
-          <div className="relative w-8 h-8">
-            <svg viewBox="0 0 32 32" className="w-8 h-8">
-              <circle cx="16" cy="16" r="14" fill="none" stroke="var(--accent-dim)" strokeWidth="1" />
-              <circle cx="16" cy="16" r="9" fill="none" stroke="var(--accent-dim)" strokeWidth="0.5" />
-              <circle cx="16" cy="16" r="4" fill="none" stroke="var(--accent-dim)" strokeWidth="0.5" />
-              <line x1="16" y1="16" x2="16" y2="2" stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round"
-                style={{ transformOrigin: '16px 16px', animation: 'radar-sweep 4s linear infinite' }} />
-              <circle cx="16" cy="16" r="2" fill="var(--accent)" />
-            </svg>
-          </div>
-          <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1.25rem', letterSpacing: '-0.02em' }}>
-            <span style={{ color: 'var(--accent)' }}>GEO</span>
-            <span style={{ color: 'var(--text-primary)' }}>Scanner</span>
-          </span>
-        </Link>
+        <div className="flex items-center gap-6">
+          <Link href="/" className="flex items-center gap-2.5 group">
+            <div className="relative w-8 h-8">
+              <svg viewBox="0 0 32 32" className="w-8 h-8">
+                <circle cx="16" cy="16" r="14" fill="none" stroke="var(--accent-dim)" strokeWidth="1" />
+                <circle cx="16" cy="16" r="9" fill="none" stroke="var(--accent-dim)" strokeWidth="0.5" />
+                <circle cx="16" cy="16" r="4" fill="none" stroke="var(--accent-dim)" strokeWidth="0.5" />
+                <line x1="16" y1="16" x2="16" y2="2" stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round"
+                  style={{ transformOrigin: '16px 16px', animation: 'radar-sweep 4s linear infinite' }} />
+                <circle cx="16" cy="16" r="2" fill="var(--accent)" />
+              </svg>
+            </div>
+            <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1.25rem', letterSpacing: '-0.02em' }}>
+              <span style={{ color: 'var(--accent)' }}>GEO</span>
+              <span style={{ color: 'var(--text-primary)' }}>Scanner</span>
+            </span>
+          </Link>
+          <Link href="/pricing"
+            className="hidden md:block nav-link-pricing"
+            style={{
+              color: 'var(--text-secondary)',
+              fontFamily: 'var(--font-mono)',
+              fontSize: '0.8rem',
+              letterSpacing: '0.05em',
+              position: 'relative',
+              padding: '4px 0',
+            }}>
+            PRICING
+          </Link>
+        </div>
 
         {/* Desktop nav */}
         <div className="hidden md:flex items-center gap-5">
@@ -236,6 +250,21 @@ export default function Navbar() {
             </span>
             {theme === "dark" ? "LIGHT MODE" : "DARK MODE"}
           </button>
+          <Link
+            href="/pricing"
+            onClick={closeMenu}
+            className="transition-colors hover:text-[var(--accent)]"
+            style={{
+              color: 'var(--text-secondary)',
+              fontFamily: 'var(--font-mono)',
+              fontSize: '0.8rem',
+              letterSpacing: '0.05em',
+              padding: '10px 0',
+              borderBottom: '1px solid var(--border)',
+            }}
+          >
+            PRICING
+          </Link>
           {isSignedIn ? (
             <>
               <Link

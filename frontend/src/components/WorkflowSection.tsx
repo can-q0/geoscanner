@@ -182,6 +182,16 @@ function ScanVisualization({ active }: { active: boolean }) {
    and crawler status — feels like a real product screen.
    ═══════════════════════════════════════════════════════════════ */
 
+// Pre-computed gauge ticks to avoid hydration mismatch from floating-point math
+const GAUGE_TICKS = Array.from({ length: 40 }).map((_, i) => {
+  const a = (i / 40) * 360 * Math.PI / 180;
+  const x1 = Math.round((60 + 46 * Math.cos(a)) * 1000) / 1000;
+  const y1 = Math.round((60 + 46 * Math.sin(a)) * 1000) / 1000;
+  const x2 = Math.round((60 + 49 * Math.cos(a)) * 1000) / 1000;
+  const y2 = Math.round((60 + 49 * Math.sin(a)) * 1000) / 1000;
+  return { x1, y1, x2, y2, w: i % 5 === 0 ? 1.2 : 0.4 };
+});
+
 function ScoreDashboard({ active }: { active: boolean }) {
   const [animatedScore, setAnimatedScore] = useState(0);
   const [phase, setPhase] = useState(0);
@@ -257,10 +267,9 @@ function ScoreDashboard({ active }: { active: boolean }) {
             <div className="relative" style={{ width: '140px', height: '140px' }}>
               <svg viewBox="0 0 120 120" className="w-full h-full" style={{ transform: 'rotate(-90deg)' }}>
                 <circle cx="60" cy="60" r={radius} fill="none" stroke="rgba(255,255,255,0.03)" strokeWidth="5" />
-                {Array.from({ length: 40 }).map((_, i) => {
-                  const a = (i / 40) * 360 * Math.PI / 180;
-                  return <line key={i} x1={60 + 46 * Math.cos(a)} y1={60 + 46 * Math.sin(a)} x2={60 + 49 * Math.cos(a)} y2={60 + 49 * Math.sin(a)} stroke="rgba(255,255,255,0.05)" strokeWidth={i % 5 === 0 ? 1.2 : 0.4} />;
-                })}
+                {GAUGE_TICKS.map((t, i) => (
+                  <line key={i} x1={t.x1} y1={t.y1} x2={t.x2} y2={t.y2} stroke="rgba(255,255,255,0.05)" strokeWidth={t.w} />
+                ))}
                 <circle cx="60" cy="60" r={radius} fill="none" stroke={scoreColor} strokeWidth="5" strokeLinecap="round"
                   strokeDasharray={circumference} strokeDashoffset={dashOffset}
                   style={{ transition: 'stroke-dashoffset 1.4s cubic-bezier(0.16, 1, 0.3, 1), stroke 0.3s', filter: `drop-shadow(0 0 8px ${scoreColor}40)` }} />
