@@ -9,12 +9,12 @@ import { prisma } from "@/lib/db";
 import Link from "next/link";
 
 const categories = [
-  { title: "AI Citability", desc: "Are your content blocks structured for AI to extract and cite? Optimal passages are 134-167 words, self-contained, and fact-rich.", weight: "25%", icon: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" },
-  { title: "Brand Authority", desc: "Brand mentions on YouTube, Reddit, and Wikipedia correlate 3x stronger with AI visibility than backlinks.", weight: "20%", icon: "M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" },
-  { title: "Content E-E-A-T", desc: "Experience, Expertise, Authoritativeness, Trustworthiness - the signals AI systems use to decide what to cite.", weight: "20%", icon: "M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" },
-  { title: "Technical Foundation", desc: "AI crawlers see raw HTML only. If your content is JavaScript-rendered, AI engines might not see it at all.", weight: "15%", icon: "M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" },
-  { title: "Schema & Structured Data", desc: "JSON-LD markup with sameAs links helps AI systems verify your entity and connect information about your brand.", weight: "10%", icon: "M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" },
-  { title: "Platform Optimization", desc: "Only 11% of domains are cited by both ChatGPT and Google AI Overviews. Each platform needs its own strategy.", weight: "10%", icon: "M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064" },
+  { title: "AI Citability", desc: "AI citability is the measure of how easily AI systems can extract and quote passages from your website. Research from Georgia Tech and Princeton (2024) shows that AI-cited passages are typically 134 to 167 words long, self-contained without requiring surrounding context, and structured with definition patterns such as 'X is a...' openings. Adding specific statistics increases AI citation rates by 40%, while definition patterns increase citation probability by 2.1x. GEO Scanner scores each content block on your site against these criteria and provides rewrite suggestions for low-scoring passages.", weight: "25%", icon: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" },
+  { title: "Brand Authority", desc: "Brand authority for AI visibility refers to how well AI systems can verify and trust your brand through third-party mentions across the web. An Ahrefs study of 75,000 brands (December 2025) found that YouTube mentions have a 0.737 correlation with AI citations, making them the strongest signal. Reddit mentions and Wikipedia presence follow closely, while traditional backlinks show only a 0.266 correlation. GEO Scanner checks your brand presence across YouTube, Reddit, Wikipedia, LinkedIn, Quora, GitHub, and 5 other platforms that AI models rely on for entity verification.", weight: "20%", icon: "M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" },
+  { title: "Content E-E-A-T", desc: "E-E-A-T is Google's framework for evaluating content quality: Experience, Expertise, Authoritativeness, and Trustworthiness. AI search engines use similar signals to decide which sources to cite. Pages with author bios showing credentials, first-party research data, cited sources, and verifiable publication dates score significantly higher. GEO Scanner evaluates 24 specific E-E-A-T signals across your pages, including author presence, data-backed claims, contact information, privacy policies, and topical authority depth, then provides a score out of 100 with prioritized recommendations.", weight: "20%", icon: "M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" },
+  { title: "Technical Foundation", desc: "Technical GEO readiness is the set of infrastructure requirements that determine whether AI crawlers can access and parse your content. Unlike web browsers, AI crawlers such as GPTBot, ClaudeBot, and PerplexityBot do not execute JavaScript, which means content rendered client-side is invisible to them. GEO Scanner checks 8 technical categories: crawlability, indexability, security headers (HSTS, CSP, X-Frame-Options), URL structure, mobile optimization, Core Web Vitals (LCP under 2.5s, INP under 200ms, CLS under 0.1), server-side rendering status, and page speed.", weight: "15%", icon: "M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" },
+  { title: "Schema & Structured Data", desc: "Schema markup is structured data in JSON-LD format that helps AI systems understand what your website represents. The most critical schema for AI visibility is Organization with sameAs links pointing to your Wikipedia, LinkedIn, YouTube, and other profiles, which is how AI models verify entity identity. GEO Scanner detects existing JSON-LD, Microdata, and RDFa on your pages, validates them against Schema.org standards, identifies missing critical types (Organization, Article, FAQPage, SoftwareApplication), and generates ready-to-paste JSON-LD code tailored to your business type.", weight: "10%", icon: "M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" },
+  { title: "Platform Optimization", desc: "Platform optimization for AI search means tailoring your content strategy to each AI engine's unique citation patterns. Only 11% of domains are cited by both ChatGPT and Google AI Overviews for the same query, because each platform weighs different signals. ChatGPT relies heavily on Wikipedia and Wikidata for entity verification. Perplexity draws 46.7% of its citations from Reddit discussions. Google AI Overviews favor pages already ranking in the top 10 organically. GEO Scanner provides individual readiness scores for all 5 major platforms with specific optimization recommendations for each.", weight: "10%", icon: "M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064" },
 ];
 
 
@@ -24,7 +24,7 @@ const aiPlatforms = [
     logo: "/logos/chatgpt.png",
     logoInvert: true,
     users: "300M+ weekly users",
-    desc: "OpenAI's model pulls from web sources it deems authoritative. It favors pages with clear entity markup, Wikipedia references, and structured content that answers questions directly.",
+    desc: "ChatGPT is an AI search engine by OpenAI with over 300 million weekly active users. It uses Bing's web index and heavily weights entity recognition through Wikipedia (47.9% of citations), Wikidata, and Crunchbase for verifying brand identity. Sites with Organization schema containing sameAs links to authoritative profiles are significantly more likely to be cited. ChatGPT typically references 2 to 4 sources per answer and prefers self-contained passages with specific factual claims.",
     signals: [
       { label: "Entity disambiguation", detail: "sameAs links, Knowledge Graph presence" },
       { label: "Content structure", detail: "H2/H3 hierarchy, answer-first formatting" },
@@ -39,7 +39,7 @@ const aiPlatforms = [
     logo: null,
     logoSvg: true,
     users: "Billions of searches/day",
-    desc: "Google's AI snippets pull from indexed pages in real-time. Schema markup, topic cluster authority, and traditional SEO signals all feed into which content gets featured in the AI overview panel.",
+    desc: "Google AI Overviews is an AI-generated summary feature displayed at the top of Google search results, reaching over 1.5 billion users per month across 200 countries. 92% of AI Overview citations come from pages already ranking in the top 10 organic results, with 47% drawn from positions 5 through 10. Google AI Overviews consumes Schema.org markup directly and favors pages with question-based headings, direct answer blocks, data tables, and strong E-E-A-T signals.",
     signals: [
       { label: "Schema markup", detail: "JSON-LD Organization, Article, FAQ" },
       { label: "Topic authority", detail: "Content depth, internal linking clusters" },
@@ -53,7 +53,7 @@ const aiPlatforms = [
     name: "Perplexity",
     logo: "/logos/perplexity.png",
     users: "100M+ monthly queries",
-    desc: "Perplexity cites specific passages inline with numbered references. It strongly prefers self-contained paragraphs with statistics, named sources, and clear factual claims over generic marketing copy.",
+    desc: "Perplexity AI is an AI-powered answer engine processing over 500 million queries per month. It draws 46.7% of its citations from Reddit discussions, followed by Wikipedia and YouTube. Perplexity cites 4 to 8 sources per answer with inline numbered references, making it the most citation-dense AI platform. It strongly favors self-contained paragraphs between 134 and 167 words that contain specific statistics, named sources, and recent publication dates.",
     signals: [
       { label: "Passage citability", detail: "Optimal 134–167 words, fact-dense" },
       { label: "Source attribution", detail: "Named studies, data with context" },
@@ -67,7 +67,7 @@ const aiPlatforms = [
     name: "Gemini",
     logo: "/logos/gemini.png",
     users: "Integrated in Google products",
-    desc: "Gemini leverages Google's Knowledge Graph and Search index. Brands with strong sameAs links, consistent structured data across properties, and verified entity information rank highest.",
+    desc: "Google Gemini is an AI assistant integrated across Google Search, Android, and Workspace products with access to over 2 billion devices. It leverages Google's Knowledge Graph and Search index directly, giving heavy weight to YouTube presence, Google Business Profile completeness, and structured data. Brands with verified Knowledge Panels and consistent entity information across sameAs-linked properties receive priority in Gemini's responses.",
     signals: [
       { label: "Knowledge Graph", detail: "Wikidata entity, sameAs cross-references" },
       { label: "Structured data", detail: "Organization, Product, SoftwareApplication" },
@@ -81,7 +81,7 @@ const aiPlatforms = [
     name: "Copilot",
     logo: "/logos/copilot.webp",
     users: "Powered by Bing index",
-    desc: "Microsoft's Copilot uses Bing's web index with a preference for fast-loading, technically clean pages. Well-attributed content with clear authorship and factual density gets prioritized.",
+    desc: "Bing Copilot is Microsoft's AI assistant powered by the Bing search index, used across Microsoft 365, Edge browser, and Windows. It supports the IndexNow protocol for real-time content indexing and cites 3 to 5 sources per answer with high attribution visibility. Copilot favors fast-loading pages (under 2 seconds LCP), technically clean HTML with proper SSR, and content with clear authorship. LinkedIn and GitHub presence are weighted as brand authority signals.",
     signals: [
       { label: "Technical SEO", detail: "SSR content, clean HTML, security headers" },
       { label: "Load performance", detail: "Sub-2s LCP, optimized Core Web Vitals" },
@@ -451,9 +451,11 @@ export default async function Home() {
             <span className="animated-gradient-text glow-text">Visible to AI?</span>
           </h1>
 
-          <p className="text-center mx-auto mt-6 max-w-2xl animate-fade-up" style={{ animationDelay: '0.3s', color: 'var(--text-secondary)', fontSize: '1.125rem', lineHeight: 1.7, fontWeight: 300 }}>
-            ChatGPT, Perplexity, Google AI Overviews, and Gemini are replacing traditional search.
-            Discover whether AI engines can find, understand, and cite your content.
+          <p className="text-center mx-auto mt-6 max-w-2xl animate-fade-up" style={{ animationDelay: '0.3s', color: 'var(--text-secondary)', fontSize: '1.05rem', lineHeight: 1.7, fontWeight: 300 }}>
+            Generative Engine Optimization (GEO) is the practice of optimizing websites for AI-powered search engines.
+            AI-referred traffic grew 527% in 2025, and Gartner projects traditional search will decline 50% by 2028.
+            GEO Scanner analyzes your site across 14 AI crawlers and 5 platforms — ChatGPT, Perplexity,
+            Google AI Overviews, Gemini, and Bing Copilot — to produce a composite visibility score from 0 to 100.
           </p>
 
           {/* Scan form */}
