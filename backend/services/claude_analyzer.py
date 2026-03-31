@@ -80,41 +80,105 @@ def _repair_truncated_json(text):
     except json.JSONDecodeError:
         pass
 
-    # Close any open strings, arrays, objects
-    fixed = text
-    # Count unmatched braces/brackets
-    open_braces = fixed.count("{") - fixed.count("}")
-    open_brackets = fixed.count("[") - fixed.count("]")
-    # Check for unterminated string
+    # Walk through tracking actual nesting (respecting strings)
+    stack = []  # tracks [ or {
     in_string = False
     escaped = False
-    for ch in fixed:
+    last_good = 0  # position after last complete value
+
+    for i, ch in enumerate(text):
         if escaped:
             escaped = False
             continue
-        if ch == "\\":
+        if ch == '\\' and in_string:
             escaped = True
             continue
         if ch == '"':
             in_string = not in_string
+            continue
+        if in_string:
+            continue
+        if ch in '{[':
+            stack.append(ch)
+        elif ch == '}' and stack and stack[-1] == '{':
+            stack.pop()
+            if not stack:
+                last_good = i + 1
+        elif ch == ']' and stack and stack[-1] == '[':
+            stack.pop()
+            if not stack:
+                last_good = i + 1
+        elif ch == ',' and len(stack) <= 1:
+            last_good = i
 
+    # Strategy 1: truncate to last clean string end, then close everything
+    # Find last complete key-value or array element
+    trunc = text
     if in_string:
-        fixed += '"'
-    # Close arrays then objects
-    fixed += "]" * max(0, open_brackets)
-    fixed += "}" * max(0, open_braces)
+        # Cut back to the opening quote of the truncated string
+        last_quote = text.rfind('"', 0, len(text) - 1)
+        if last_quote > 0:
+            # Go back further to before the key or value
+            before = text[:last_quote].rstrip()
+            if before.endswith(':'):
+                # Truncated value — remove the key too
+                key_start = before.rfind('"', 0, len(before) - 1)
+                if key_start > 0:
+                    trunc = text[:key_start].rstrip().rstrip(',')
+                else:
+                    trunc = before[:-1].rstrip().rstrip(',')
+            elif before.endswith(','):
+                trunc = before[:-1]
+            else:
+                trunc = before
+
+    # Close remaining open brackets/braces
+    stack2 = []
+    in_str = False
+    esc = False
+    for ch in trunc:
+        if esc:
+            esc = False
+            continue
+        if ch == '\\' and in_str:
+            esc = True
+            continue
+        if ch == '"':
+            in_str = not in_str
+            continue
+        if in_str:
+            continue
+        if ch in '{[':
+            stack2.append(ch)
+        elif ch == '}' and stack2 and stack2[-1] == '{':
+            stack2.pop()
+        elif ch == ']' and stack2 and stack2[-1] == '[':
+            stack2.pop()
+
+    closers = ''.join(']' if c == '[' else '}' for c in reversed(stack2))
+    trunc += closers
 
     try:
-        return json.loads(fixed)
+        return json.loads(trunc)
     except json.JSONDecodeError:
-        # Last resort: truncate to last complete object/array
-        for i in range(len(text) - 1, 0, -1):
-            if text[i] in "]}":
-                try:
-                    return json.loads(text[: i + 1])
-                except json.JSONDecodeError:
-                    continue
-        raise
+        pass
+
+    # Strategy 2: cut to last_good position
+    if last_good > 10:
+        try:
+            return json.loads(text[:last_good])
+        except json.JSONDecodeError:
+            pass
+
+    # Strategy 3: brute force — find last } that parses
+    for i in range(len(text) - 1, max(0, len(text) - 2000), -1):
+        if text[i] == '}':
+            try:
+                return json.loads(text[:i + 1])
+            except json.JSONDecodeError:
+                continue
+
+    raise json.JSONDecodeError("Could not repair truncated JSON", text, 0)
 
 
 def _call_claude(system_prompt, user_data, model=None, max_retries=3):
@@ -321,11 +385,23 @@ Return JSON:
     {"action": "<what to do>", "impact": "high|medium|low", "effort": "<time estimate>"}
   ],
   "all_findings": [
-    {"severity": "critical|high|medium|low", "category": "<category>", "title": "<finding>", "description": "<details>", "fix": "<how to fix>"}
+    {"severity": "critical|high|medium|low", "category": "<category>", "title": "<finding>", "description": "<1 sentence>", "fix": "<1 sentence>"}
   ]
-}"""
+}
+
+STRICT LIMITS:
+- executive_summary: max 4 sentences
+- quick_wins: max 5 items
+- medium_term: max 5 items
+- strategic: max 3 items
+- all_findings: max 10 items, each description max 1 sentence
+- Total response must be under 3000 tokens"""
+    # Trim the input to avoid blowing up context
+    trimmed = json.dumps(all_results, indent=1, default=str)
+    if len(trimmed) > 20000:
+        trimmed = trimmed[:20000] + "\n... (truncated)"
     user_content = f"""Audit results to synthesize into client report:
 
-{json.dumps(all_results, indent=2, default=str)}"""
+{trimmed}"""
 
     return _call_claude(prompt, user_content)
