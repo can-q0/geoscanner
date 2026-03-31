@@ -41,7 +41,7 @@ JSON_OUTPUT_SUFFIX = """
 
 IMPORTANT: Return ONLY valid JSON (no markdown fences, no explanation text before/after).
 Do not wrap in ```json``` blocks. Output raw JSON only.
-Keep all text fields concise — max 2-3 sentences per field. Do not exceed 12000 tokens total."""
+Be concise — max 2 sentences per text field."""
 
 
 # --- Quick scan prompt (condensed from audit.md) ---
@@ -72,122 +72,13 @@ Return ONLY valid JSON (no markdown, no code blocks):
 }"""
 
 
-def _repair_truncated_json(text):
-    """Attempt to repair JSON that was truncated mid-generation."""
-    # Try as-is first
-    try:
-        return json.loads(text)
-    except json.JSONDecodeError:
-        pass
-
-    # Walk through tracking actual nesting (respecting strings)
-    stack = []  # tracks [ or {
-    in_string = False
-    escaped = False
-    last_good = 0  # position after last complete value
-
-    for i, ch in enumerate(text):
-        if escaped:
-            escaped = False
-            continue
-        if ch == '\\' and in_string:
-            escaped = True
-            continue
-        if ch == '"':
-            in_string = not in_string
-            continue
-        if in_string:
-            continue
-        if ch in '{[':
-            stack.append(ch)
-        elif ch == '}' and stack and stack[-1] == '{':
-            stack.pop()
-            if not stack:
-                last_good = i + 1
-        elif ch == ']' and stack and stack[-1] == '[':
-            stack.pop()
-            if not stack:
-                last_good = i + 1
-        elif ch == ',' and len(stack) <= 1:
-            last_good = i
-
-    # Strategy 1: truncate to last clean string end, then close everything
-    # Find last complete key-value or array element
-    trunc = text
-    if in_string:
-        # Cut back to the opening quote of the truncated string
-        last_quote = text.rfind('"', 0, len(text) - 1)
-        if last_quote > 0:
-            # Go back further to before the key or value
-            before = text[:last_quote].rstrip()
-            if before.endswith(':'):
-                # Truncated value — remove the key too
-                key_start = before.rfind('"', 0, len(before) - 1)
-                if key_start > 0:
-                    trunc = text[:key_start].rstrip().rstrip(',')
-                else:
-                    trunc = before[:-1].rstrip().rstrip(',')
-            elif before.endswith(','):
-                trunc = before[:-1]
-            else:
-                trunc = before
-
-    # Close remaining open brackets/braces
-    stack2 = []
-    in_str = False
-    esc = False
-    for ch in trunc:
-        if esc:
-            esc = False
-            continue
-        if ch == '\\' and in_str:
-            esc = True
-            continue
-        if ch == '"':
-            in_str = not in_str
-            continue
-        if in_str:
-            continue
-        if ch in '{[':
-            stack2.append(ch)
-        elif ch == '}' and stack2 and stack2[-1] == '{':
-            stack2.pop()
-        elif ch == ']' and stack2 and stack2[-1] == '[':
-            stack2.pop()
-
-    closers = ''.join(']' if c == '[' else '}' for c in reversed(stack2))
-    trunc += closers
-
-    try:
-        return json.loads(trunc)
-    except json.JSONDecodeError:
-        pass
-
-    # Strategy 2: cut to last_good position
-    if last_good > 10:
-        try:
-            return json.loads(text[:last_good])
-        except json.JSONDecodeError:
-            pass
-
-    # Strategy 3: brute force — find last } that parses
-    for i in range(len(text) - 1, max(0, len(text) - 2000), -1):
-        if text[i] == '}':
-            try:
-                return json.loads(text[:i + 1])
-            except json.JSONDecodeError:
-                continue
-
-    raise json.JSONDecodeError("Could not repair truncated JSON", text, 0)
-
-
 def _call_claude(system_prompt, user_data, model=None, max_retries=3):
     """Make a synchronous Claude API call with retry on rate limits."""
     for attempt in range(max_retries):
         try:
             response = client.messages.create(
                 model=model or MODEL_FULL,
-                max_tokens=16384,
+                max_tokens=8192,
                 system=system_prompt,
                 messages=[{"role": "user", "content": user_data}],
             )
@@ -197,7 +88,7 @@ def _call_claude(system_prompt, user_data, model=None, max_retries=3):
             # Strip markdown code fences if present
             if text.startswith("```"):
                 text = text.split("\n", 1)[1].rsplit("```", 1)[0].strip()
-            return _repair_truncated_json(text)
+            return json.loads(text)
         except RateLimitError as e:
             wait = 30 * (attempt + 1)
             print(f"Rate limited (attempt {attempt + 1}/{max_retries}), waiting {wait}s... {e}")
@@ -385,23 +276,11 @@ Return JSON:
     {"action": "<what to do>", "impact": "high|medium|low", "effort": "<time estimate>"}
   ],
   "all_findings": [
-    {"severity": "critical|high|medium|low", "category": "<category>", "title": "<finding>", "description": "<1 sentence>", "fix": "<1 sentence>"}
+    {"severity": "critical|high|medium|low", "category": "<category>", "title": "<finding>", "description": "<details>", "fix": "<how to fix>"}
   ]
-}
-
-STRICT LIMITS:
-- executive_summary: max 4 sentences
-- quick_wins: max 5 items
-- medium_term: max 5 items
-- strategic: max 3 items
-- all_findings: max 10 items, each description max 1 sentence
-- Total response must be under 3000 tokens"""
-    # Trim the input to avoid blowing up context
-    trimmed = json.dumps(all_results, indent=1, default=str)
-    if len(trimmed) > 20000:
-        trimmed = trimmed[:20000] + "\n... (truncated)"
+}"""
     user_content = f"""Audit results to synthesize into client report:
 
-{trimmed}"""
+{json.dumps(all_results, indent=2, default=str)}"""
 
     return _call_claude(prompt, user_content)
