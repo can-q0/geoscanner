@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 
 interface Stage {
   label: string;
@@ -106,11 +106,26 @@ function getStageStatus(
 export default function ScanProgress({
   progress,
   domain,
+  scanType,
 }: {
   progress: number;
   domain: string;
+  scanType?: string;
 }) {
   const clampedProgress = Math.max(0, Math.min(100, progress));
+  const [elapsed, setElapsed] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => setElapsed((e) => e + 1), 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const minutes = Math.floor(elapsed / 60);
+  const seconds = elapsed % 60;
+  const timeStr = minutes > 0
+    ? `${minutes}:${seconds.toString().padStart(2, "0")}`
+    : `0:${seconds.toString().padStart(2, "0")}`;
+  const isFull = scanType === "full";
 
   const activeIndex = useMemo(() => {
     for (let i = STAGES.length - 1; i >= 0; i--) {
@@ -342,16 +357,27 @@ export default function ScanProgress({
           >
             Overall Progress
           </span>
-          <span
-            style={{
-              fontFamily: "var(--font-mono)",
-              fontSize: "0.8rem",
-              color: "var(--accent)",
-              fontWeight: 600,
-            }}
-          >
-            {Math.round(clampedProgress)}%
-          </span>
+          <div className="flex items-center gap-3">
+            <span
+              style={{
+                fontFamily: "var(--font-mono)",
+                fontSize: "0.75rem",
+                color: "var(--text-muted)",
+              }}
+            >
+              {timeStr}
+            </span>
+            <span
+              style={{
+                fontFamily: "var(--font-mono)",
+                fontSize: "0.8rem",
+                color: "var(--accent)",
+                fontWeight: 600,
+              }}
+            >
+              {Math.round(clampedProgress)}%
+            </span>
+          </div>
         </div>
         <div
           style={{
@@ -373,6 +399,19 @@ export default function ScanProgress({
           />
         </div>
       </div>
+
+      {/* Full scan reminder */}
+      {isFull && (
+        <div className="mt-6 text-center rounded-lg p-4"
+          style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: 'var(--accent)', letterSpacing: '0.04em', marginBottom: '4px' }}>
+            FULL GEO AUDIT IN PROGRESS
+          </p>
+          <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+            We&apos;re running a deep analysis across 6 categories, scanning up to 50 pages, and checking 14 AI crawlers. This usually takes 3-5 minutes.
+          </p>
+        </div>
+      )}
 
     </div>
   );

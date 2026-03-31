@@ -100,7 +100,7 @@ export default function ScanResultPage({ params }: { params: Promise<{ id: strin
       <div className="max-w-4xl mx-auto px-6 py-10">
         <Breadcrumb domain={scan.domain} />
         <div className="flex items-center justify-center min-h-[50vh]">
-          <ScanProgress progress={scan.progress ?? 0} domain={scan.domain || "..."} />
+          <ScanProgress progress={scan.progress ?? 0} domain={scan.domain || "..."} scanType={scan.scanType} />
         </div>
       </div>
     );
