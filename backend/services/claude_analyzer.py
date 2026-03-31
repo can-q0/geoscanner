@@ -75,7 +75,7 @@ def _call_claude(system_prompt, user_data, model=None):
     """Make a synchronous Claude API call and parse JSON response."""
     response = client.messages.create(
         model=model or MODEL_FULL,
-        max_tokens=16384,
+        max_tokens=40000,
         system=system_prompt,
         messages=[{"role": "user", "content": user_data}],
     )
