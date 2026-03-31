@@ -290,9 +290,10 @@ export default function ScanResultPage({ params }: { params: Promise<{ id: strin
 
         {/* Quick findings (always visible) */}
         {summary?.summary && (
-          <div id="executive-summary" className="rounded-lg bg-gray-900 border border-gray-800 p-6 mb-6 scroll-mt-20">
-            <h2 className="text-lg font-semibold mb-3">Executive Summary</h2>
-            <p className="text-gray-300 leading-relaxed">{summary.summary}</p>
+          <div id="executive-summary" className="rounded-lg border p-6 mb-6 scroll-mt-20"
+            style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}>
+            <h2 className="text-lg font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>Executive Summary</h2>
+            <p className="leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{summary.summary}</p>
           </div>
         )}
 
@@ -326,7 +327,7 @@ export default function ScanResultPage({ params }: { params: Promise<{ id: strin
                       )}
                       <span style={{
                         color: isBlurred ? 'transparent' : 'var(--text-secondary)',
-                        textShadow: isBlurred ? '0 0 8px rgba(255,255,255,0.3)' : 'none',
+                        textShadow: isBlurred ? '0 0 8px var(--text-muted)' : 'none',
                         userSelect: isBlurred ? 'none' : 'auto',
                       }}>
                         {isBlurred ? insightText.replace(/./g, (c) => c === ' ' ? ' ' : 'x') : insightText}
@@ -346,8 +347,9 @@ export default function ScanResultPage({ params }: { params: Promise<{ id: strin
 
         {/* AI Crawler Status (always visible) */}
         {summary?.crawler_status && Object.keys(summary.crawler_status).length > 0 && (
-          <div id="crawler-access" className="rounded-lg bg-gray-900 border border-gray-800 p-6 mb-6 scroll-mt-20">
-            <h2 className="text-lg font-semibold mb-3">AI Crawler Access</h2>
+          <div id="crawler-access" className="rounded-lg border p-6 mb-6 scroll-mt-20"
+            style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}>
+            <h2 className="text-lg font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>AI Crawler Access</h2>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {Object.entries(summary.crawler_status).map(([crawler, status]) => (
                 <div key={crawler} className="flex items-center gap-2 text-sm">
@@ -358,7 +360,7 @@ export default function ScanResultPage({ params }: { params: Promise<{ id: strin
                       ? "bg-red-500"
                       : "bg-yellow-500"
                   }`} />
-                  <span className="text-gray-400">{crawler}</span>
+                  <span style={{ color: 'var(--text-secondary)' }}>{crawler}</span>
                 </div>
               ))}
             </div>
