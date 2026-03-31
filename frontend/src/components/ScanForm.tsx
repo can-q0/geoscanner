@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
 import { useToast } from "@/components/Toast";
 import TrustIndicators from "@/components/TrustIndicators";
+import { analytics } from "@/lib/analytics";
 
 interface PendingPurchase {
   scanId: string;
@@ -53,6 +54,9 @@ export default function ScanForm() {
     setLoading(true);
     setError("");
     toast.info("Scan started — analyzing your site...");
+
+    const domain = url.trim().replace(/^https?:\/\//, "").split("/")[0];
+    analytics.scanStarted(url.trim(), domain);
 
     try {
       const res = await fetch("/api/scan", {
@@ -106,6 +110,7 @@ export default function ScanForm() {
   const handlePurchase = async () => {
     if (!pendingPurchase) return;
     setPurchasing(true);
+    analytics.paymentStarted(pendingPurchase.domain, pendingPurchase.scanId);
     try {
       const res = await fetch("/api/payment/create", {
         method: "POST",

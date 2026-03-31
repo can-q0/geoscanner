@@ -1,13 +1,19 @@
 "use client";
 
+import { useEffect } from "react";
 import TrustIndicators from "@/components/TrustIndicators";
+import { analytics } from "@/lib/analytics";
 
 interface BlurredSectionProps {
   scanId: string;
+  score?: number;
   onUnlock: () => void;
 }
 
-export default function BlurredSection({ scanId, onUnlock }: BlurredSectionProps) {
+export default function BlurredSection({ scanId, score, onUnlock }: BlurredSectionProps) {
+  useEffect(() => {
+    analytics.paywallShown(scanId, score ?? 0);
+  }, [scanId, score]);
   return (
     <div className="relative mt-10 rounded-xl overflow-hidden" style={{ border: '1px solid var(--border)' }}>
       {/* Placeholder content */}
@@ -72,7 +78,7 @@ export default function BlurredSection({ scanId, onUnlock }: BlurredSectionProps
             30-day action plan, and downloadable PDF.
           </p>
 
-          <button onClick={onUnlock}
+          <button onClick={() => { analytics.paymentStarted(scanId, scanId); onUnlock(); }}
             className="cursor-pointer px-8 py-3.5 font-semibold transition-all rounded-lg"
             style={{
               fontFamily: 'var(--font-display)',

@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useToast } from "@/components/Toast";
+import { analytics } from "@/lib/analytics";
 
 interface ShareButtonProps {
   score: number;
@@ -44,6 +45,7 @@ export default function ShareButton({ score, domain, scanId }: ShareButtonProps)
     try {
       await navigator.clipboard.writeText(scanUrl);
       toast.success("Link copied!");
+      analytics.shareClicked("copy", domain);
     } catch {
       toast.error("Failed to copy link");
     }
@@ -57,6 +59,7 @@ export default function ShareButton({ score, domain, scanId }: ShareButtonProps)
       "_blank",
       "noopener,noreferrer"
     );
+    analytics.shareClicked("twitter", domain);
     close();
   };
 
@@ -66,6 +69,7 @@ export default function ShareButton({ score, domain, scanId }: ShareButtonProps)
       "_blank",
       "noopener,noreferrer"
     );
+    analytics.shareClicked("linkedin", domain);
     close();
   };
 

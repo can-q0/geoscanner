@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { analytics } from "@/lib/analytics";
 
 function PaymentCallbackContent() {
   const searchParams = useSearchParams();
@@ -27,6 +28,7 @@ function PaymentCallbackContent() {
         .then((data) => {
           if (data.success && data.scanId) {
             setStatus("success");
+            analytics.paymentCompleted(data.scanId, 500);
             setTimeout(() => router.push(`/scan/${data.scanId}`), 2000);
           } else {
             setStatus("error");

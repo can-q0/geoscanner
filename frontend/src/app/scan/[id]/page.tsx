@@ -1,6 +1,6 @@
 "use client";
 
-import { use } from "react";
+import { use, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useScanStatus } from "@/hooks/useScanStatus";
@@ -13,6 +13,7 @@ import TrustIndicators from "@/components/TrustIndicators";
 import ShareButton from "@/components/ShareButton";
 import ScanProgress from "@/components/ScanProgress";
 import ScanResultLoading from "./loading";
+import { analytics } from "@/lib/analytics";
 
 function Breadcrumb({ domain }: { domain?: string }) {
   return (
@@ -54,6 +55,24 @@ export default function ScanResultPage({ params }: { params: Promise<{ id: strin
   const { id } = use(params);
   const { data: scan, loading, error } = useScanStatus(id);
   const router = useRouter();
+  const trackedCompleted = useRef(false);
+  const trackedPaywall = useRef(false);
+
+  // Track scan completed
+  useEffect(() => {
+    if (scan?.status === "completed" && scan.domain && scan.geoScore != null && !trackedCompleted.current) {
+      trackedCompleted.current = true;
+      analytics.scanCompleted(scan.domain, scan.geoScore);
+    }
+  }, [scan?.status, scan?.domain, scan?.geoScore]);
+
+  // Track paywall shown for pending_payment status
+  useEffect(() => {
+    if (scan?.status === "pending_payment" && scan.domain && !trackedPaywall.current) {
+      trackedPaywall.current = true;
+      analytics.paywallShown(scan.domain, scan.geoScore ?? 0);
+    }
+  }, [scan?.status, scan?.domain, scan?.geoScore]);
 
   if (loading) {
     return <ScanResultLoading />;
@@ -90,6 +109,7 @@ export default function ScanResultPage({ params }: { params: Promise<{ id: strin
   // Pending payment state - user used their free scan, this URL needs purchase
   if (scan.status === "pending_payment") {
     const handleBuyReport = async () => {
+      analytics.paymentStarted(scan.domain, scan.id);
       try {
         const res = await fetch("/api/payment/create", {
           method: "POST",

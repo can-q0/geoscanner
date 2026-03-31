@@ -2,11 +2,13 @@ import type { Metadata } from "next";
 import { Syne, DM_Sans, JetBrains_Mono } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { dark } from "@clerk/themes";
+import { Suspense } from "react";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { ToastProvider } from "@/components/Toast";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import PostHogProvider from "@/components/PostHogProvider";
 
 const syne = Syne({
   subsets: ["latin"],
@@ -206,11 +208,15 @@ export default function RootLayout({
         </head>
         <body className="min-h-full flex flex-col">
           <ThemeProvider>
-            <ToastProvider>
-              <Navbar />
-              <main className="flex-1">{children}</main>
-              <Footer />
-            </ToastProvider>
+            <Suspense fallback={null}>
+              <PostHogProvider>
+                <ToastProvider>
+                  <Navbar />
+                  <main className="flex-1">{children}</main>
+                  <Footer />
+                </ToastProvider>
+              </PostHogProvider>
+            </Suspense>
           </ThemeProvider>
         </body>
       </html>
