@@ -75,10 +75,12 @@ def _call_claude(system_prompt, user_data, model=None):
     """Make a synchronous Claude API call and parse JSON response."""
     response = client.messages.create(
         model=model or MODEL_FULL,
-        max_tokens=4096,
+        max_tokens=16384,
         system=system_prompt,
         messages=[{"role": "user", "content": user_data}],
     )
+    if response.stop_reason == "max_tokens":
+        print(f"WARNING: Claude response truncated (max_tokens hit), model={model or MODEL_FULL}")
     text = response.content[0].text.strip()
     # Strip markdown code fences if present
     if text.startswith("```"):
