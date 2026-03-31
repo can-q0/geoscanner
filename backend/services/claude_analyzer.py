@@ -40,7 +40,8 @@ def _load_schema_templates():
 JSON_OUTPUT_SUFFIX = """
 
 IMPORTANT: Return ONLY valid JSON (no markdown fences, no explanation text before/after).
-Do not wrap in ```json``` blocks. Output raw JSON only."""
+Do not wrap in ```json``` blocks. Output raw JSON only.
+Keep all text fields concise — max 2-3 sentences per field. Do not exceed 12000 tokens total."""
 
 
 # --- Quick scan prompt (condensed from audit.md) ---
@@ -71,13 +72,58 @@ Return ONLY valid JSON (no markdown, no code blocks):
 }"""
 
 
+def _repair_truncated_json(text):
+    """Attempt to repair JSON that was truncated mid-generation."""
+    # Try as-is first
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        pass
+
+    # Close any open strings, arrays, objects
+    fixed = text
+    # Count unmatched braces/brackets
+    open_braces = fixed.count("{") - fixed.count("}")
+    open_brackets = fixed.count("[") - fixed.count("]")
+    # Check for unterminated string
+    in_string = False
+    escaped = False
+    for ch in fixed:
+        if escaped:
+            escaped = False
+            continue
+        if ch == "\\":
+            escaped = True
+            continue
+        if ch == '"':
+            in_string = not in_string
+
+    if in_string:
+        fixed += '"'
+    # Close arrays then objects
+    fixed += "]" * max(0, open_brackets)
+    fixed += "}" * max(0, open_braces)
+
+    try:
+        return json.loads(fixed)
+    except json.JSONDecodeError:
+        # Last resort: truncate to last complete object/array
+        for i in range(len(text) - 1, 0, -1):
+            if text[i] in "]}":
+                try:
+                    return json.loads(text[: i + 1])
+                except json.JSONDecodeError:
+                    continue
+        raise
+
+
 def _call_claude(system_prompt, user_data, model=None, max_retries=3):
     """Make a synchronous Claude API call with retry on rate limits."""
     for attempt in range(max_retries):
         try:
             response = client.messages.create(
                 model=model or MODEL_FULL,
-                max_tokens=40000,
+                max_tokens=16384,
                 system=system_prompt,
                 messages=[{"role": "user", "content": user_data}],
             )
@@ -87,9 +133,9 @@ def _call_claude(system_prompt, user_data, model=None, max_retries=3):
             # Strip markdown code fences if present
             if text.startswith("```"):
                 text = text.split("\n", 1)[1].rsplit("```", 1)[0].strip()
-            return json.loads(text)
+            return _repair_truncated_json(text)
         except RateLimitError as e:
-            wait = 30 * (attempt + 1)  # 30s, 60s, 90s
+            wait = 30 * (attempt + 1)
             print(f"Rate limited (attempt {attempt + 1}/{max_retries}), waiting {wait}s... {e}")
             if attempt < max_retries - 1:
                 time.sleep(wait)
