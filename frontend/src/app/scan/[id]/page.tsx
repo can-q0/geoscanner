@@ -564,6 +564,73 @@ function ActionPlanTabs({ synthesis }: { synthesis: SynthesisData }) {
   );
 }
 
+function SchemaCodeBlock({ code }: { code: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const lines = code.split("\n");
+  const isLong = lines.length > 8;
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="mt-4">
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="text-sm font-medium" style={{ color: 'var(--accent)' }}>Generated Schema (ready to paste)</h3>
+        <div className="flex items-center gap-2">
+          {isLong && (
+            <button onClick={() => setExpanded(!expanded)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg cursor-pointer text-xs transition-all"
+              style={{ fontFamily: 'var(--font-mono)', background: 'var(--bg-elevated)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}>
+              <svg className="w-3.5 h-3.5 transition-transform" style={{ transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+              {expanded ? "COLLAPSE" : `EXPAND (${lines.length} lines)`}
+            </button>
+          )}
+          <button onClick={handleCopy}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg cursor-pointer text-xs transition-all"
+            style={{ fontFamily: 'var(--font-mono)', background: copied ? 'var(--accent)' : 'var(--accent-dim)', color: copied ? 'var(--bg-void)' : 'var(--accent)', border: '1px solid var(--accent)25' }}>
+            {copied ? (
+              <>
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                COPIED
+              </>
+            ) : (
+              <>
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                COPY
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+      <div className="relative rounded-lg overflow-hidden" style={{ border: '1px solid var(--border)' }}>
+        <pre className="p-5 overflow-x-auto" style={{
+          background: 'var(--bg-elevated)',
+          fontFamily: 'var(--font-mono)', fontSize: '0.8rem', lineHeight: 1.7, color: 'var(--text-secondary)',
+          maxHeight: expanded || !isLong ? 'none' : '220px',
+          transition: 'max-height 0.3s ease',
+        }}>
+          {code}
+        </pre>
+        {isLong && !expanded && (
+          <div className="absolute bottom-0 left-0 right-0 h-16 flex items-end justify-center pb-3 cursor-pointer"
+            onClick={() => setExpanded(true)}
+            style={{ background: 'linear-gradient(transparent, var(--bg-elevated))' }}>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: 'var(--accent)' }}>
+              Click to expand
+            </span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function FullResults({ results, scanId, pdfUrl }: { results: Record<string, unknown>; scanId: string; pdfUrl: string | null }) {
   const categoryResults = (results.category_results || {}) as Record<string, CategoryData>;
   const synthesis = (results.synthesis || {}) as SynthesisData;
@@ -616,25 +683,9 @@ function FullResults({ results, scanId, pdfUrl }: { results: Record<string, unkn
             <h2 className="text-lg font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>{categoryLabels[category] || category}</h2>
             <p className="text-sm leading-relaxed mb-4" style={{ color: 'var(--text-secondary)', lineHeight: 1.7 }}>{safeStr(catData.analysis)}</p>
 
-            {/* Schema code block */}
+            {/* Schema code block — collapsible */}
             {category === "schema" && catData.generated_schema && (
-              <div className="mt-4">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-sm font-medium" style={{ color: 'var(--accent)' }}>Generated Schema (ready to paste)</h3>
-                  <button onClick={() => navigator.clipboard.writeText(safeStr(catData.generated_schema))}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg cursor-pointer text-xs transition-all"
-                    style={{ fontFamily: 'var(--font-mono)', background: 'var(--accent-dim)', color: 'var(--accent)', border: '1px solid var(--accent)25' }}>
-                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-                    COPY
-                  </button>
-                </div>
-                <pre className="p-5 rounded-lg overflow-x-auto text-sm" style={{
-                  background: 'var(--bg-elevated)', border: '1px solid var(--border)',
-                  fontFamily: 'var(--font-mono)', fontSize: '0.8rem', lineHeight: 1.7, color: 'var(--text-secondary)',
-                }}>
-                  {safeStr(catData.generated_schema)}
-                </pre>
-              </div>
+              <SchemaCodeBlock code={safeStr(catData.generated_schema)} />
             )}
 
             {/* Rewrite suggestions */}
