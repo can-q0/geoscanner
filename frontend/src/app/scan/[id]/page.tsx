@@ -221,14 +221,28 @@ export default function ScanResultPage({ params }: { params: Promise<{ id: strin
   }
 
   // Completed state
-  const summary = scan.scoresSummary as {
+  const rawSummary = scan.scoresSummary as {
     scores?: Record<string, number>;
     summary?: string;
-    top_findings?: string[];
+    top_findings?: (string | Record<string, unknown>)[];
     score_label?: string;
     crawler_status?: Record<string, string>;
     llmstxt_exists?: boolean;
   } | null;
+
+  // Normalize top_findings — could be strings or objects from different scan types
+  const summary = rawSummary ? {
+    ...rawSummary,
+    top_findings: rawSummary.top_findings?.map((f) => {
+      if (typeof f === "string") return f;
+      if (typeof f === "object" && f !== null) {
+        const sev = (f.severity as string || "").toUpperCase();
+        const title = (f.title as string) || (f.description as string) || JSON.stringify(f);
+        return sev ? `${sev}: ${title}` : title;
+      }
+      return String(f);
+    }),
+  } : null;
 
   const scores = summary?.scores || {
     citability: 0, brand: 0, content_eeat: 0, technical: 0, schema: 0, platform: 0,
