@@ -154,19 +154,27 @@ async def run_full_audit(url, scan_id):
         await update_scan_progress(scan_id, 30, "Preparing AI analysis...")
         category_data = _prepare_category_data(fetched, citability_data, brand_data, llmstxt_validation)
 
-        # Phase 4: Parallel Claude API calls (6 categories now including brand)
-        await update_scan_progress(scan_id, 35, "Running parallel AI analysis (6 categories)...")
-
+        # Phase 4: Sequential Claude API calls to respect rate limits
         categories = ["citability", "content_eeat", "technical", "schema", "platform", "brand"]
-        futures = []
-        for cat in categories:
-            future = loop.run_in_executor(
+        category_labels = {
+            "citability": "AI citability",
+            "content_eeat": "content E-E-A-T",
+            "technical": "technical SEO",
+            "schema": "schema & structured data",
+            "platform": "platform optimization",
+            "brand": "brand authority",
+        }
+        category_results = {}
+        for idx, cat in enumerate(categories):
+            progress = 35 + int((idx / len(categories)) * 30)
+            await update_scan_progress(scan_id, progress, f"Analyzing {category_labels[cat]}...")
+            result = await loop.run_in_executor(
                 executor, analyze_full_category, cat, category_data[cat]
             )
-            futures.append(future)
-
-        results = await asyncio.gather(*futures)
-        category_results = dict(zip(categories, results))
+            category_results[cat] = result
+            # Small delay between calls to stay within rate limits
+            if idx < len(categories) - 1:
+                await asyncio.sleep(3)
 
         await update_scan_progress(scan_id, 70, "Calculating scores...")
 

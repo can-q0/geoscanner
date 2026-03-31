@@ -2,8 +2,8 @@
 
 import json
 import os
-from typing import Optional
-from anthropic import Anthropic
+import time
+from anthropic import Anthropic, RateLimitError
 from config import ANTHROPIC_API_KEY
 
 client = Anthropic(api_key=ANTHROPIC_API_KEY)
@@ -71,21 +71,30 @@ Return ONLY valid JSON (no markdown, no code blocks):
 }"""
 
 
-def _call_claude(system_prompt, user_data, model=None):
-    """Make a synchronous Claude API call and parse JSON response."""
-    response = client.messages.create(
-        model=model or MODEL_FULL,
-        max_tokens=40000,
-        system=system_prompt,
-        messages=[{"role": "user", "content": user_data}],
-    )
-    if response.stop_reason == "max_tokens":
-        print(f"WARNING: Claude response truncated (max_tokens hit), model={model or MODEL_FULL}")
-    text = response.content[0].text.strip()
-    # Strip markdown code fences if present
-    if text.startswith("```"):
-        text = text.split("\n", 1)[1].rsplit("```", 1)[0].strip()
-    return json.loads(text)
+def _call_claude(system_prompt, user_data, model=None, max_retries=3):
+    """Make a synchronous Claude API call with retry on rate limits."""
+    for attempt in range(max_retries):
+        try:
+            response = client.messages.create(
+                model=model or MODEL_FULL,
+                max_tokens=40000,
+                system=system_prompt,
+                messages=[{"role": "user", "content": user_data}],
+            )
+            if response.stop_reason == "max_tokens":
+                print(f"WARNING: Claude response truncated (max_tokens hit), model={model or MODEL_FULL}")
+            text = response.content[0].text.strip()
+            # Strip markdown code fences if present
+            if text.startswith("```"):
+                text = text.split("\n", 1)[1].rsplit("```", 1)[0].strip()
+            return json.loads(text)
+        except RateLimitError as e:
+            wait = 30 * (attempt + 1)  # 30s, 60s, 90s
+            print(f"Rate limited (attempt {attempt + 1}/{max_retries}), waiting {wait}s... {e}")
+            if attempt < max_retries - 1:
+                time.sleep(wait)
+            else:
+                raise
 
 
 def analyze_quick(page_data, robots_data, llmstxt_data, citability_data):
