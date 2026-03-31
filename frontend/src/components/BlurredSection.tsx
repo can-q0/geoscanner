@@ -28,14 +28,14 @@ export default function BlurredSection({ scanId, score, onUnlock }: BlurredSecti
       const res = await fetch("/api/promo/redeem", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: code.trim(), scanId }),
+        body: JSON.stringify({ code: code.trim() }),
       });
       const data = await res.json();
       if (!res.ok) {
         setCodeError(data.error || "Invalid code");
       } else {
-        // Code accepted — reload to show full results
-        window.location.reload();
+        // Code valid — redirect to premium scan page
+        window.location.href = `/scan/premium?code=${encodeURIComponent(code.trim().toUpperCase())}`;
       }
     } catch {
       setCodeError("Something went wrong. Try again.");

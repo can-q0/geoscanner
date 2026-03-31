@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAuthUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { startFullAudit } from "@/lib/api";
 
 // Valid promo codes — add codes here as needed
 const VALID_CODES: Record<string, { type: "full_unlock" }> = {
@@ -8,6 +9,7 @@ const VALID_CODES: Record<string, { type: "full_unlock" }> = {
   "BETAUSER": { type: "full_unlock" },
 };
 
+// POST /api/promo/redeem — validate only (no scan)
 export async function POST(request: Request) {
   try {
     const user = await getAuthUser();
@@ -15,36 +17,51 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     }
 
-    const { code, scanId } = await request.json();
-    if (!code || !scanId) {
-      return NextResponse.json({ error: "Code and scan ID required" }, { status: 400 });
+    const body = await request.json();
+    const code = body.code?.toUpperCase();
+    const url = body.url; // optional — if provided, create a full scan
+
+    if (!code) {
+      return NextResponse.json({ error: "Code is required" }, { status: 400 });
     }
 
-    const promoCode = VALID_CODES[code.toUpperCase()];
+    const promoCode = VALID_CODES[code];
     if (!promoCode) {
       return NextResponse.json({ error: "Invalid or expired code" }, { status: 400 });
     }
 
-    const scan = await prisma.scan.findUnique({ where: { id: scanId } });
-    if (!scan || scan.userId !== user.id) {
-      return NextResponse.json({ error: "Scan not found" }, { status: 404 });
+    // If just validating (no URL), return success
+    if (!url) {
+      return NextResponse.json({ valid: true });
     }
 
-    if (scan.isPaid) {
-      return NextResponse.json({ error: "Already unlocked" }, { status: 400 });
+    // URL provided — create a full paid scan
+    let domain: string;
+    try {
+      domain = new URL(url.startsWith("http") ? url : `https://${url}`).hostname;
+    } catch {
+      return NextResponse.json({ error: "Invalid URL" }, { status: 400 });
     }
 
-    // Mark scan as paid via promo code
-    await prisma.scan.update({
-      where: { id: scanId },
-      data: { isPaid: true, scanType: "full" },
+    const normalizedUrl = url.startsWith("http") ? url : `https://${url}`;
+
+    const scan = await prisma.scan.create({
+      data: {
+        userId: user.id,
+        url: normalizedUrl,
+        domain,
+        scanType: "full",
+        status: "processing",
+        isPaid: true,
+      },
     });
 
-    // Trigger full audit
-    const { startFullAudit } = await import("@/lib/api");
-    await startFullAudit(scan.url, scanId);
+    // Trigger full audit (Sonnet 4.6)
+    startFullAudit(normalizedUrl, scan.id).catch((err: unknown) => {
+      console.error("Full audit trigger failed (non-fatal):", err);
+    });
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ valid: true, scanId: scan.id });
   } catch (error) {
     console.error("Promo redeem error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
