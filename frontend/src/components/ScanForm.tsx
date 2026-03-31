@@ -102,6 +102,7 @@ export default function ScanForm() {
       const msg = "Failed to connect. Please check your connection and try again.";
       setError(msg);
       toast.error(msg);
+      analytics.scanError(msg, url.trim(), url.trim().replace(/^https?:\/\//, "").split("/")[0]);
     } finally {
       setLoading(false);
     }

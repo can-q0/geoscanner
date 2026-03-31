@@ -9,5 +9,6 @@ export const analytics = {
   paymentCompleted: (scanId: string, amount: number) => posthog.capture('payment_completed', { scanId, amount }),
   pdfDownloaded: (scanId: string) => posthog.capture('pdf_downloaded', { scanId }),
   shareClicked: (platform: string, domain: string) => posthog.capture('share_clicked', { platform, domain }),
+  scanError: (errorMessage: string, url: string, domain: string) => posthog.capture('scan_error', { error_message: errorMessage, url, domain }),
   identifyUser: (userId: string, email: string) => posthog.identify(userId, { email }),
 }

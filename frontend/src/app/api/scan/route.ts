@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getAuthUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { startQuickScan } from "@/lib/api";
+import { getPostHogClient } from "@/lib/posthog-server";
 
 export async function POST(request: Request) {
   try {
@@ -56,6 +57,11 @@ export async function POST(request: Request) {
     startQuickScan(normalizedUrl, scan.id).catch((err: unknown) => {
       console.error("Backend scan trigger failed (non-fatal):", err);
     });
+
+    const ph = getPostHogClient();
+    if (ph) {
+      ph.capture({ distinctId: user.id, event: "scan_created", properties: { scan_id: scan.id, domain, scan_type: scan.scanType, user_id: user.id } });
+    }
 
     return NextResponse.json({ scanId: scan.id });
   } catch (error) {

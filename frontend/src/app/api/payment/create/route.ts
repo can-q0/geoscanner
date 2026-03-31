@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAuthUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { getPostHogClient } from "@/lib/posthog-server";
 
 export async function POST(request: Request) {
   try {
@@ -33,6 +34,11 @@ export async function POST(request: Request) {
         status: "pending",
       },
     });
+
+    const ph = getPostHogClient();
+    if (ph) {
+      ph.capture({ distinctId: user.id, event: "payment_initiated", properties: { scan_id: scanId, domain: scan.domain, amount_cents: 500, currency: "TRY", dev_mode: !process.env.IYZICO_API_KEY } });
+    }
 
     // TODO: Create iyzico payment link
     const IYZICO_API_KEY = process.env.IYZICO_API_KEY;

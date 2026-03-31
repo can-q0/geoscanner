@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { startFullAudit } from "@/lib/api";
+import { getPostHogClient } from "@/lib/posthog-server";
 
 export async function POST(request: Request) {
   try {
@@ -43,6 +44,11 @@ export async function POST(request: Request) {
         await startFullAudit(scan.url, scan.id);
       }
 
+      const ph = getPostHogClient();
+      if (ph) {
+        ph.capture({ distinctId: payment.userId, event: "payment_confirmed", properties: { scan_id: payment.scanId, payment_id: payment.id, amount_cents: payment.amountCents } });
+      }
+
       return NextResponse.json({ success: true, scanId: payment.scanId });
     }
 
@@ -51,6 +57,11 @@ export async function POST(request: Request) {
       where: { id: payment.id },
       data: { status: "failed" },
     });
+
+    const phFail = getPostHogClient();
+    if (phFail) {
+      phFail.capture({ distinctId: payment.userId, event: "payment_failed", properties: { scan_id: payment.scanId, payment_id: payment.id } });
+    }
 
     return NextResponse.json({ success: false, error: "Payment failed" });
   } catch (error) {
