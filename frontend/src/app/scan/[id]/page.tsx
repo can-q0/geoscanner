@@ -210,7 +210,7 @@ export default function ScanResultPage({ params }: { params: Promise<{ id: strin
         <div className="flex items-center justify-center min-h-[40vh]">
           <div className="text-center max-w-md">
             <p className="text-red-400 text-lg mb-2">Scan failed</p>
-            <p className="text-gray-400 text-sm mb-4">{scan.errorMessage}</p>
+            <p className="text-gray-400 text-sm mb-4">{safeStr(scan.errorMessage)}</p>
             <button onClick={() => router.push("/")} className="text-emerald-400 hover:underline">
               Try again
             </button>
@@ -427,6 +427,14 @@ interface CategoryData {
   rewrite_suggestions?: RewriteSuggestion[];
 }
 
+// Safely convert any value to a renderable string
+function safeStr(val: unknown): string {
+  if (val === null || val === undefined) return "";
+  if (typeof val === "string") return val;
+  if (typeof val === "number" || typeof val === "boolean") return String(val);
+  try { return JSON.stringify(val, null, 2); } catch { return String(val); }
+}
+
 function FullResults({ results, scanId, pdfUrl }: { results: Record<string, unknown>; scanId: string; pdfUrl: string | null }) {
   const categoryResults = (results.category_results || {}) as Record<string, CategoryData>;
   const synthesis = (results.synthesis || {}) as SynthesisData;
@@ -450,7 +458,7 @@ function FullResults({ results, scanId, pdfUrl }: { results: Record<string, unkn
       {synthesis.executive_summary && (
         <div className="rounded-lg bg-gray-900 border border-emerald-800/50 p-6 scroll-mt-20">
           <h2 className="text-lg font-semibold mb-3 text-emerald-400">Full Executive Summary</h2>
-          <p className="text-gray-300 leading-relaxed">{synthesis.executive_summary}</p>
+          <p className="text-gray-300 leading-relaxed">{safeStr(synthesis.executive_summary)}</p>
         </div>
       )}
 
@@ -472,11 +480,11 @@ function FullResults({ results, scanId, pdfUrl }: { results: Record<string, unkn
                   }`}>
                     {finding.severity?.toUpperCase()}
                   </span>
-                  {finding.category && <span className="text-xs text-gray-500">{finding.category}</span>}
+                  {finding.category && <span className="text-xs text-gray-500">{safeStr(finding.category)}</span>}
                 </div>
-                <p className="text-white text-sm font-medium">{finding.title}</p>
-                <p className="text-gray-400 text-sm mt-1">{finding.description}</p>
-                {finding.fix && <p className="text-emerald-400 text-sm mt-1">Fix: {finding.fix}</p>}
+                <p className="text-white text-sm font-medium">{safeStr(finding.title)}</p>
+                <p className="text-gray-400 text-sm mt-1">{safeStr(finding.description)}</p>
+                {finding.fix && <p className="text-emerald-400 text-sm mt-1">Fix: {safeStr(finding.fix)}</p>}
               </div>
             ))}
           </div>
@@ -505,13 +513,13 @@ function FullResults({ results, scanId, pdfUrl }: { results: Record<string, unkn
           return (
             <div key={category} id={sectionId} className="rounded-lg bg-gray-900 border border-gray-800 p-6 scroll-mt-20">
               <h2 className="text-lg font-semibold mb-3">{labels[category] || category}</h2>
-            <p className="text-gray-300 text-sm leading-relaxed">{catData.analysis}</p>
+            <p className="text-gray-300 text-sm leading-relaxed">{safeStr(catData.analysis)}</p>
 
             {/* Schema: show generated code */}
             {category === "schema" && catData.generated_schema && (
               <div className="mt-4">
                 <h3 className="text-sm font-medium text-emerald-400 mb-2">Generated Schema (ready to paste)</h3>
-                <CodeBlock code={catData.generated_schema} language="json-ld" />
+                <CodeBlock code={safeStr(catData.generated_schema)} language="json-ld" />
               </div>
             )}
 
@@ -521,10 +529,10 @@ function FullResults({ results, scanId, pdfUrl }: { results: Record<string, unkn
                 <h3 className="text-sm font-medium text-emerald-400">Rewrite Suggestions</h3>
                 {catData.rewrite_suggestions!.map((rw, i) => (
                   <div key={i} className="bg-gray-950 border border-gray-800 rounded-lg p-4">
-                    <p className="text-xs text-gray-500 mb-1">{rw.heading}</p>
-                    <p className="text-sm text-gray-400 mb-2">Original: {rw.original_preview}...</p>
-                    <p className="text-sm text-emerald-300">{rw.suggested_rewrite}</p>
-                    <p className="text-xs text-gray-500 mt-1">{rw.improvement_reason}</p>
+                    <p className="text-xs text-gray-500 mb-1">{safeStr(rw.heading)}</p>
+                    <p className="text-sm text-gray-400 mb-2">Original: {safeStr(rw.original_preview)}...</p>
+                    <p className="text-sm text-emerald-300">{safeStr(rw.suggested_rewrite)}</p>
+                    <p className="text-xs text-gray-500 mt-1">{safeStr(rw.improvement_reason)}</p>
                   </div>
                 ))}
               </div>
@@ -547,8 +555,8 @@ function FullResults({ results, scanId, pdfUrl }: { results: Record<string, unkn
                   <div key={i} className="flex items-start gap-3 text-sm">
                     <span className="text-emerald-400 mt-0.5">&#10003;</span>
                     <div>
-                      <span className="text-white">{item.action}</span>
-                      <span className="text-gray-500 ml-2">({item.effort})</span>
+                      <span className="text-white">{safeStr(item.action)}</span>
+                      <span className="text-gray-500 ml-2">({safeStr(item.effort)})</span>
                     </div>
                   </div>
                 ))}
@@ -564,8 +572,8 @@ function FullResults({ results, scanId, pdfUrl }: { results: Record<string, unkn
                   <div key={i} className="flex items-start gap-3 text-sm">
                     <span className="text-blue-400 mt-0.5">&#9679;</span>
                     <div>
-                      <span className="text-white">{item.action}</span>
-                      <span className="text-gray-500 ml-2">({item.effort})</span>
+                      <span className="text-white">{safeStr(item.action)}</span>
+                      <span className="text-gray-500 ml-2">({safeStr(item.effort)})</span>
                     </div>
                   </div>
                 ))}
@@ -581,8 +589,8 @@ function FullResults({ results, scanId, pdfUrl }: { results: Record<string, unkn
                   <div key={i} className="flex items-start gap-3 text-sm">
                     <span className="text-purple-400 mt-0.5">&#9670;</span>
                     <div>
-                      <span className="text-white">{item.action}</span>
-                      <span className="text-gray-500 ml-2">({item.effort})</span>
+                      <span className="text-white">{safeStr(item.action)}</span>
+                      <span className="text-gray-500 ml-2">({safeStr(item.effort)})</span>
                     </div>
                   </div>
                 ))}
