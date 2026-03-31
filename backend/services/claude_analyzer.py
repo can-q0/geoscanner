@@ -8,7 +8,7 @@ from config import ANTHROPIC_API_KEY
 
 client = Anthropic(api_key=ANTHROPIC_API_KEY)
 MODEL_QUICK = "claude-haiku-4-5-20251001"
-MODEL_FULL = "claude-sonnet-4-6"
+MODEL_FULL = "claude-haiku-4-5-20251001"
 
 PROMPTS_DIR = os.path.join(os.path.dirname(__file__), "..", "prompts")
 SCHEMA_DIR = os.path.join(os.path.dirname(__file__), "..", "schema")
@@ -40,8 +40,7 @@ def _load_schema_templates():
 JSON_OUTPUT_SUFFIX = """
 
 IMPORTANT: Return ONLY valid JSON (no markdown fences, no explanation text before/after).
-Do not wrap in ```json``` blocks. Output raw JSON only.
-Be concise — max 2 sentences per text field."""
+Do not wrap in ```json``` blocks. Output raw JSON only."""
 
 
 # --- Quick scan prompt (condensed from audit.md) ---
