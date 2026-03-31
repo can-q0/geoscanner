@@ -77,7 +77,7 @@ def _call_claude(system_prompt, user_data, model=None, max_retries=3):
         try:
             response = client.messages.create(
                 model=model or MODEL_FULL,
-                max_tokens=45000,
+                max_tokens=8192,
                 system=system_prompt,
                 messages=[{"role": "user", "content": user_data}],
             )
