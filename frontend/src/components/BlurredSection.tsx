@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import TrustIndicators from "@/components/TrustIndicators";
 import { analytics } from "@/lib/analytics";
 
@@ -11,9 +11,38 @@ interface BlurredSectionProps {
 }
 
 export default function BlurredSection({ scanId, score, onUnlock }: BlurredSectionProps) {
+  const [showCodeInput, setShowCodeInput] = useState(false);
+  const [code, setCode] = useState("");
+  const [codeError, setCodeError] = useState("");
+  const [codeLoading, setCodeLoading] = useState(false);
+
   useEffect(() => {
     analytics.paywallShown(scanId, score ?? 0);
   }, [scanId, score]);
+
+  const handleCodeSubmit = async () => {
+    if (!code.trim()) return;
+    setCodeError("");
+    setCodeLoading(true);
+    try {
+      const res = await fetch("/api/promo/redeem", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: code.trim(), scanId }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setCodeError(data.error || "Invalid code");
+      } else {
+        // Code accepted — reload to show full results
+        window.location.reload();
+      }
+    } catch {
+      setCodeError("Something went wrong. Try again.");
+    } finally {
+      setCodeLoading(false);
+    }
+  };
   return (
     <div className="relative mt-10 rounded-xl overflow-hidden" style={{ border: '1px solid var(--border)' }}>
       {/* Placeholder content */}
@@ -96,6 +125,65 @@ export default function BlurredSection({ scanId, score, onUnlock }: BlurredSecti
           <p className="mt-3" style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: 'var(--text-muted)', letterSpacing: '0.08em' }}>
             ONE-TIME PAYMENT &middot; INSTANT ACCESS &middot; PDF INCLUDED
           </p>
+
+          {/* Promo code section */}
+          <div className="mt-5">
+            {!showCodeInput ? (
+              <button
+                onClick={() => setShowCodeInput(true)}
+                className="cursor-pointer transition-colors"
+                style={{
+                  background: 'none', border: 'none',
+                  fontFamily: 'var(--font-mono)', fontSize: '0.7rem',
+                  color: 'var(--accent)', letterSpacing: '0.03em',
+                  textDecoration: 'underline', textUnderlineOffset: '3px',
+                  textDecorationColor: 'var(--accent-dim)',
+                }}
+              >
+                Have a code?
+              </button>
+            ) : (
+              <div className="flex flex-col items-center gap-2 mt-1">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={code}
+                    onChange={(e) => { setCode(e.target.value.toUpperCase()); setCodeError(""); }}
+                    placeholder="ENTER CODE"
+                    className="outline-none"
+                    style={{
+                      fontFamily: 'var(--font-mono)', fontSize: '0.8rem',
+                      letterSpacing: '0.1em', textAlign: 'center',
+                      padding: '8px 16px', borderRadius: '8px',
+                      background: 'var(--bg-elevated)',
+                      border: `1px solid ${codeError ? 'var(--danger)' : 'var(--border)'}`,
+                      color: 'var(--text-primary)', width: '180px',
+                    }}
+                    onKeyDown={(e) => e.key === "Enter" && handleCodeSubmit()}
+                    autoFocus
+                  />
+                  <button
+                    onClick={handleCodeSubmit}
+                    disabled={codeLoading || !code.trim()}
+                    className="cursor-pointer transition-all disabled:opacity-40"
+                    style={{
+                      fontFamily: 'var(--font-mono)', fontSize: '0.7rem',
+                      padding: '8px 16px', borderRadius: '8px', border: 'none',
+                      background: 'var(--accent)', color: 'var(--bg-void)',
+                      letterSpacing: '0.04em',
+                    }}
+                  >
+                    {codeLoading ? "..." : "APPLY"}
+                  </button>
+                </div>
+                {codeError && (
+                  <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: 'var(--danger)' }}>
+                    {codeError}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
 
           <div className="mt-4">
             <TrustIndicators />
